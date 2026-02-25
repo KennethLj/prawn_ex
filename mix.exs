@@ -21,7 +21,7 @@ defmodule PrawnEx.MixProject do
       licenses: ["MIT"],
       links: %{
         "HexDocs" => "https://hexdocs.pm/prawn_ex",
-        "GitHub" => "https://github.com/prawn-ex/prawn_ex"
+        "GitHub" => "https://github.com/half-blood-labs/prawn_ex"
       }
     ]
   end
@@ -40,7 +40,7 @@ defmodule PrawnEx.MixProject do
     [
       main: "readme",
       extras: ["README.md"],
-      source_url: "https://github.com/prawn-ex/prawn_ex"
+      source_url: "https://github.com/half-blood-labs/prawn_ex"
     ]
   end
 end
