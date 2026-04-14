@@ -6,7 +6,7 @@
 [![Hex.pm](https://img.shields.io/hexpm/l/prawn_ex.svg)](https://hex.pm/packages/prawn_ex)
 [![Elixir](https://img.shields.io/badge/elixir-%3E%3D%201.16-purple)](https://elixir-lang.org)
 
-**Version** 0.1.0 · **Elixir** ~> 1.16
+**Version** 0.1.1 · **Elixir** ~> 1.16
 
 Prawn-style declarative PDF generation for Elixir. Pure Elixir, no Chrome or HTML: build a document spec and emit PDF 1.4.
 
@@ -18,7 +18,7 @@ Prawn-style declarative PDF generation for Elixir. Pure Elixir, no Chrome or HTM
 - **Colors** — Gray (stroking and non-stroking) and RGB (e.g. for fill and stroke).
 - **Tables** — Grid with optional header row, configurable column widths, row height, padding, borders; **cell alignment** per column (`:left`, `:center`, `:right`).
 - **Charts** — Bar charts and line charts from data (no external deps).
-- **Images** — Embed **JPEG** (file path or binary); optional width/height; asset directory via config.
+- **Images** — Embed **JPEG** (`/DCTDecode`) or **PNG** (`/FlateDecode`): 8-bit RGB/RGBA, non-interlaced, path or binary; optional width/height; `image_dir` config for relative paths.
 - **Links** — External link annotations (clickable URLs).
 - **Headers & footers** — Per-page callbacks with page number for titles and “Page N”.
 
@@ -115,19 +115,26 @@ Options: `:at`, `:width`, `:height`, `:bar_color` / `:stroke_color`, `:axis`, `:
 
 ### Images
 
-Embed JPEG images (file path or binary). Optionally set `:width` and `:height` in pt; default is intrinsic size.
+Embed **JPEG** or **PNG** via `PrawnEx.image/3` (file path or raw bytes). Use `:at` (required), and optionally `:width` / `:height` in pt; default size is the image’s pixel dimensions treated as pt.
 
-**Image / asset path:** Set `config :prawn_ex, image_dir: "priv/images"` (or any directory) in your application config. Relative paths passed to `PrawnEx.image/3` are then resolved from that directory. Absolute paths and raw JPEG binaries are used as-is.
+| Format | Notes |
+|--------|--------|
+| **JPEG** | Stream is embedded as-is with `/DCTDecode`. |
+| **PNG** | 8-bit truecolor **RGB** or **RGBA** only, no interlacing. Decoded in pure Elixir; pixels are written as `/DeviceRGB` with `/FlateDecode`. **RGBA** is composited on **white** (simple transparency handling). Indexed-palette, grayscale-only, or interlaced PNGs are not supported and return `{:error, ...}`. |
+
+**Image / asset path:** Set `config :prawn_ex, image_dir: "priv/images"` (or any directory) in your application config. Relative paths passed to `PrawnEx.image/3` are resolved from that directory. Absolute paths and raw JPEG or PNG binaries are used as-is.
 
 ```elixir
 # In your config/config.exs:
 config :prawn_ex, image_dir: "priv/images"
 
-# In your code — "photo.jpg" is loaded from priv/images/photo.jpg:
+# In your code — paths are under image_dir:
 doc
 |> PrawnEx.image("photo.jpg", at: {50, 400})
-|> PrawnEx.image("logo.jpg", at: {400, 700}, width: 80, height: 40)
+|> PrawnEx.image("logo.png", at: {400, 700}, width: 80, height: 40)
 ```
+
+Other image types produce `{:error, :unsupported_image_format}`.
 
 ### Colors
 
@@ -142,7 +149,7 @@ Generate the demo PDF:
 mix run scripts/gen_demo.exs
 ```
 
-Output: `output/prawn_ex_demo.pdf` (4 pages: hero, table, charts, images). The image on page 4 uses `demo.jpg` resolved from the configured `image_dir` (default `"assets"`). Add `assets/demo.jpg` to show your own image, or set `config :prawn_ex, image_dir: "path/to/your/jpegs"` in `config/config.exs`.
+Output: `output/prawn_ex_demo.pdf` (4 pages: hero, table, charts, images). Page 4 shows **JPEG** (`demo.jpg` or a tiny embedded fallback) and **PNG** (`assets/demo.png` is included; falls back to a test fixture if `demo.png` is missing). Set `config :prawn_ex, image_dir: "path/to/images"` in `config/config.exs` if you keep assets elsewhere.
 
 ### Examples
 
